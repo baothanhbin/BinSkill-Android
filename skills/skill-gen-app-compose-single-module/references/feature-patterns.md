@@ -20,6 +20,7 @@ feature/<name>/
 - `Screen`:
   - receives plain state and callbacks
   - focuses on rendering
+  - starter scaffolds should default to visually blank screens unless the user asked for seeded placeholder content
 
 ## Navigation File
 Each feature should expose:
@@ -30,6 +31,7 @@ Each feature should expose:
 ## Component Folder
 - use `component/` for feature-local UI pieces worth separating from the main screen file
 - do not move generic shared widgets here; those belong in `core/ui`
+- for blank starter scaffolds, the component file can be a minimal empty content container that fills available space
 
 ## ViewModel Defaults
 - use `StateFlow` for durable screen state

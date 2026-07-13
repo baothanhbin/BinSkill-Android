@@ -74,8 +74,6 @@ def strings_block(project_name: str, features: list[str]) -> str:
         '    <string name="shell_loading">Preparing app...</string>',
         '    <string name="generic_back">Back</string>',
         '    <string name="generic_open">Open</string>',
-        '    <string name="empty_destinations">No other starter destinations yet.</string>',
-        '    <string name="sample_status_ready">Starter structure is ready to extend.</string>',
     ]
     for feature in features:
         key = resource_name(feature)
@@ -588,14 +586,41 @@ def create_app_shell(root: Path, base_package: str, features: list[str]) -> None
 
             import androidx.compose.runtime.Composable
             import androidx.compose.runtime.Stable
+            import androidx.compose.runtime.getValue
             import androidx.compose.runtime.remember
+            import androidx.navigation.NavDestination
+            import androidx.navigation.NavDestination.Companion.hierarchy
+            import androidx.navigation.NavGraph.Companion.findStartDestination
             import androidx.navigation.NavHostController
+            import androidx.navigation.compose.currentBackStackEntryAsState
             import androidx.navigation.compose.rememberNavController
 
             @Stable
             class AppState(
                 val navController: NavHostController,
-            )
+            ) {{
+                @Composable
+                fun currentDestination(): NavDestination? {{
+                    val backStackEntry by navController.currentBackStackEntryAsState()
+                    return backStackEntry?.destination
+                }}
+
+                fun navigateToTopLevelDestination(destination: TopLevelDestination) {{
+                    navController.navigate(destination.route) {{
+                        popUpTo(navController.graph.findStartDestination().id) {{
+                            saveState = true
+                        }}
+                        launchSingleTop = true
+                        restoreState = true
+                    }}
+                }}
+
+                fun isTopLevelDestinationInHierarchy(destination: TopLevelDestination): Boolean {{
+                    return navController.currentDestination
+                        ?.hierarchy
+                        ?.any {{ it.route == destination.route }} == true
+                }}
+            }}
 
             @Composable
             fun rememberAppState(
@@ -694,16 +719,20 @@ def create_app_shell(root: Path, base_package: str, features: list[str]) -> None
             import androidx.compose.material3.CenterAlignedTopAppBar
             import androidx.compose.material3.CircularProgressIndicator
             import androidx.compose.material3.ExperimentalMaterial3Api
+            import androidx.compose.material3.Icon
+            import androidx.compose.material3.NavigationBar
+            import androidx.compose.material3.NavigationBarItem
             import androidx.compose.material3.Scaffold
             import androidx.compose.material3.Text
             import androidx.compose.runtime.Composable
             import androidx.compose.runtime.getValue
             import androidx.compose.ui.Alignment
             import androidx.compose.ui.Modifier
+            import androidx.compose.ui.res.painterResource
             import androidx.compose.ui.res.stringResource
             import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
             import androidx.lifecycle.compose.collectAsStateWithLifecycle
-            import androidx.navigation.compose.currentBackStackEntryAsState
+            import androidx.navigation.NavDestination.Companion.hierarchy
             import {base_package}.R
             import {base_package}.app.MainViewModel
             import {base_package}.app.navigation.MainNavHost
@@ -717,10 +746,9 @@ def create_app_shell(root: Path, base_package: str, features: list[str]) -> None
             ) {{
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 val appState = rememberAppState()
-                val currentBackStackEntry by appState.navController.currentBackStackEntryAsState()
-                val currentRoute = currentBackStackEntry?.destination?.route
+                val currentDestination = appState.currentDestination()
                 val labelRes = TopLevelDestination.entries
-                    .firstOrNull {{ it.route == currentRoute }}
+                    .firstOrNull {{ destination -> currentDestination?.hierarchy?.any {{ it.route == destination.route }} == true }}
                     ?.labelId
                     ?: R.string.app_name
 
@@ -731,6 +759,30 @@ def create_app_shell(root: Path, base_package: str, features: list[str]) -> None
                                 Text(text = stringResource(labelRes))
                             }},
                         )
+                    }},
+                    bottomBar = {{
+                        if (TopLevelDestination.entries.size > 1) {{
+                            NavigationBar {{
+                                TopLevelDestination.entries.forEach {{ destination ->
+                                    val selected = currentDestination?.hierarchy?.any {{ it.route == destination.route }} == true
+                                    NavigationBarItem(
+                                        selected = selected,
+                                        onClick = {{ appState.navigateToTopLevelDestination(destination) }},
+                                        icon = {{
+                                            Icon(
+                                                painter = painterResource(
+                                                    id = if (selected) destination.selectedIconId else destination.unselectedIconId,
+                                                ),
+                                                contentDescription = stringResource(destination.labelId),
+                                            )
+                                        }},
+                                        label = {{
+                                            Text(text = stringResource(destination.labelId))
+                                        }},
+                                    )
+                                }}
+                            }}
+                        }}
                     }},
                 ) {{ innerPadding ->
                     if (uiState.isReady) {{
@@ -757,28 +809,9 @@ def create_app_shell(root: Path, base_package: str, features: list[str]) -> None
 
 def feature_nav_host_block(feature: str, all_features: list[str]) -> str:
     camel = camel_case(feature)
-    destinations = [
-        other for other in all_features if other != feature
-    ]
-    if destinations:
-        lines = ",\n".join(
-            [
-                f'                FeatureDestination(route = {resource_name(item).upper()}_ROUTE, titleRes = R.string.feature_{resource_name(item)}_title)'
-                for item in destinations
-            ]
-        )
-        destinations_block = f"listOf(\n{lines}\n            )"
-    else:
-        destinations_block = "emptyList()"
-    on_back_click = "null" if feature == all_features[0] else "{ navController.popBackStack() }"
-
     return "\n".join(
         [
-            f"        {camel}Screen(",
-            f"            destinations = {destinations_block},",
-            "            onNavigate = { route -> navController.navigate(route) },",
-            f"            onBackClick = {on_back_click},",
-            "        )",
+            f"        {camel}Screen()",
         ]
     )
 
@@ -1083,17 +1116,7 @@ fun SingleModuleStarterTheme(
             f"""
             package {base_package}.core.ui.component
 
-            import androidx.compose.foundation.layout.Arrangement
-            import androidx.compose.foundation.layout.Column
-            import androidx.compose.foundation.layout.fillMaxWidth
-            import androidx.compose.material3.Button
-            import androidx.compose.material3.OutlinedButton
-            import androidx.compose.material3.Text
             import androidx.compose.runtime.Composable
-            import androidx.compose.ui.Modifier
-            import androidx.compose.ui.res.stringResource
-            import androidx.compose.ui.unit.dp
-            import {base_package}.R
             import {base_package}.core.model.FeatureDestination
 
             @Composable
@@ -1102,32 +1125,6 @@ fun SingleModuleStarterTheme(
                 onNavigate: (String) -> Unit,
                 onBackClick: (() -> Unit)?,
             ) {{
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {{
-                    if (destinations.isEmpty()) {{
-                        Text(text = stringResource(R.string.empty_destinations))
-                    }} else {{
-                        destinations.forEach {{ destination ->
-                            Button(
-                                onClick = {{ onNavigate(destination.route) }},
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {{
-                                Text(text = stringResource(destination.titleRes))
-                            }}
-                        }}
-                    }}
-
-                    if (onBackClick != null) {{
-                        OutlinedButton(
-                            onClick = onBackClick,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {{
-                            Text(text = stringResource(R.string.generic_back))
-                        }}
-                    }}
-                }}
             }}
             """
         ),
@@ -1543,7 +1540,6 @@ def create_feature_files(root: Path, base_package: str, features: list[str]) -> 
         pascal = pascal_case(feature)
         namespace = f"{base_package}.feature.{key}"
         route_const = f"{key.upper()}_ROUTE"
-        destination_description = f"feature_{key}_description"
 
         write_file(
             base / "feature" / key / f"{pascal}Screen.kt",
@@ -1551,74 +1547,32 @@ def create_feature_files(root: Path, base_package: str, features: list[str]) -> 
                 f"""
                 package {namespace}
 
-                import androidx.compose.foundation.layout.Arrangement
-                import androidx.compose.foundation.layout.Column
-                import androidx.compose.foundation.layout.fillMaxSize
-                import androidx.compose.foundation.layout.fillMaxWidth
-                import androidx.compose.foundation.layout.padding
-                import androidx.compose.material3.MaterialTheme
-                import androidx.compose.material3.Text
                 import androidx.compose.runtime.Composable
                 import androidx.compose.ui.Modifier
-                import androidx.compose.ui.res.stringResource
-                import androidx.compose.ui.unit.dp
                 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
                 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-                import {base_package}.R
-                import {base_package}.core.model.FeatureDestination
-                import {base_package}.core.ui.component.FeatureActionList
                 import {namespace}.component.{pascal}Content
 
                 @Composable
                 fun {pascal}Route(
-                    destinations: List<FeatureDestination>,
-                    onNavigate: (String) -> Unit,
-                    onBackClick: (() -> Unit)?,
                     viewModel: {pascal}ViewModel = hiltViewModel(),
                 ) {{
                     val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
 
                     {pascal}Screen(
                         title = uiState.title,
-                        description = stringResource(R.string.{destination_description}),
-                        destinations = destinations,
-                        onNavigate = onNavigate,
-                        onBackClick = onBackClick,
                     )
                 }}
 
                 @Composable
                 fun {pascal}Screen(
                     title: String,
-                    description: String,
-                    destinations: List<FeatureDestination>,
-                    onNavigate: (String) -> Unit,
-                    onBackClick: (() -> Unit)?,
+                    modifier: Modifier = Modifier,
                 ) {{
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(20.dp),
-                    ) {{
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.headlineMedium,
-                        )
-                        Text(
-                            text = stringResource(R.string.sample_status_ready),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        {pascal}Content(
-                            description = description,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        FeatureActionList(
-                            destinations = destinations,
-                            onNavigate = onNavigate,
-                            onBackClick = onBackClick,
-                        )
-                    }}
+                    {pascal}Content(
+                        title = title,
+                        modifier = modifier,
+                    )
                 }}
                 """
             ),
@@ -1662,33 +1616,19 @@ def create_feature_files(root: Path, base_package: str, features: list[str]) -> 
                 f"""
                 package {namespace}.component
 
-                import androidx.compose.foundation.layout.Column
-                import androidx.compose.foundation.layout.fillMaxWidth
-                import androidx.compose.foundation.layout.padding
-                import androidx.compose.material3.Card
-                import androidx.compose.material3.MaterialTheme
-                import androidx.compose.material3.Text
+                import androidx.compose.foundation.layout.Box
+                import androidx.compose.foundation.layout.fillMaxSize
                 import androidx.compose.runtime.Composable
                 import androidx.compose.ui.Modifier
-                import androidx.compose.ui.unit.dp
 
                 @Composable
                 fun {pascal}Content(
-                    description: String,
+                    title: String,
                     modifier: Modifier = Modifier,
                 ) {{
-                    Card(modifier = modifier) {{
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(20.dp),
-                        ) {{
-                            Text(
-                                text = description,
-                                style = MaterialTheme.typography.bodyLarge,
-                            )
-                        }}
-                    }}
+                    Box(
+                        modifier = modifier.fillMaxSize(),
+                    )
                 }}
                 """
             ),
@@ -1704,7 +1644,6 @@ def create_feature_files(root: Path, base_package: str, features: list[str]) -> 
                 import androidx.navigation.NavGraphBuilder
                 import androidx.navigation.NavOptions
                 import androidx.navigation.compose.composable
-                import {base_package}.core.model.FeatureDestination
                 import {namespace}.{pascal}Route
 
                 const val {route_const} = "{key}"
@@ -1716,23 +1655,14 @@ def create_feature_files(root: Path, base_package: str, features: list[str]) -> 
                     )
                 }}
 
-                fun NavGraphBuilder.{camel_case(feature)}Screen(
-                    destinations: List<FeatureDestination>,
-                    onNavigate: (String) -> Unit,
-                    onBackClick: (() -> Unit)?,
-                ) {{
+                fun NavGraphBuilder.{camel_case(feature)}Screen() {{
                     composable(route = {route_const}) {{
-                        {pascal}Route(
-                            destinations = destinations,
-                            onNavigate = onNavigate,
-                            onBackClick = onBackClick,
-                        )
+                        {pascal}Route()
                     }}
                 }}
                 """
             ),
         )
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Scaffold a single-module Android project.")

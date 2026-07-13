@@ -34,7 +34,12 @@
 - prefer one placeholder worker that shows the pattern instead of many half-finished workers
 
 ## Resources
-- keep feature titles and descriptions in `strings.xml`
+- keep feature titles in `strings.xml`; add descriptions only when the starter flow really uses them
 - avoid hardcoding repeated user-facing text in Compose files
 - keep custom fonts in `res/font`
 - prefer a dedicated `Font.kt` plus typography extensions in `Type.kt` for app-wide text styles
+
+## Starter Surface
+- default fresh starter screens to a light surface with white `background` and `surface` colors
+- avoid dynamic color or system dark theme by default unless the user asks for adaptive theming
+- starter feature screens should read clearly on a white canvas without extra setup
