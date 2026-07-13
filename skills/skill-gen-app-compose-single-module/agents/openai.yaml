@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill gen app compose single module"
+  short_description: "Scaffold Compose Android app with one :app module"
+  default_prompt: "Use $skill-gen-app-compose-single-module to scaffold a new Android project with a single :app module and package-folder architecture inspired by Listening_AI."
