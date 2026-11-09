@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android Semantic Renamer"
+  short_description: "Reword Android symbols without behavior changes"
+  default_prompt: "Use $android-semantic-renamer to rename project-owned Android identifiers to context-aware equivalent names without changing code flow, runtime behavior, UI, contracts, persisted data, or string resources."

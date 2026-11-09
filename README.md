@@ -4,11 +4,12 @@
 
 `BinGen-Skill` là bộ sưu tập Codex skill dành cho việc tạo mới và refactor project Android an toàn.
 
-Repository hiện có ba skill Android:
+Repository hiện có bốn skill Android:
 
 - `skill-gen-app-compose-multi-module`: tạo project Compose đa module gồm `app`, `core/*`, `feature/*`, `resources` và `build-logic`.
 - `skill-gen-app-compose-single-module`: tạo project chỉ có một module `:app`, đồng thời phân tách `app`, `core/*` và `feature/*` bằng package folder.
-- `android-suffix-renamer`: thêm suffix do người dùng chỉ định vào tên Kotlin, Java, Room và Android resource thuộc project mà không làm thay đổi hành vi.
+- `android-suffix-renamer`: thêm suffix do người dùng chỉ định vào tên Kotlin, Java, Room và Android resource không phải string thuộc project mà không làm thay đổi hành vi.
+- `android-semantic-renamer`: đặt lại identifier thuộc project bằng tên tương đương theo ngữ cảnh, không dùng suffix và không thay đổi code flow, runtime behavior hoặc UI.
 
 ## Cấu trúc repository
 
@@ -26,6 +27,10 @@ skills/
     references/
     scripts/
   android-suffix-renamer/
+    SKILL.md
+    agents/
+    references/
+  android-semantic-renamer/
     SKILL.md
     agents/
     references/
@@ -54,7 +59,16 @@ Sử dụng `android-suffix-renamer` khi bạn cần:
 - thêm suffix vào các thành phần thuộc một project Android có sẵn;
 - đổi đồng bộ file Kotlin/Java, class, function, variable, Room, layout, XML ID và resource;
 - giữ nguyên package, luồng xử lý, Android callback, database schema, serialization, API, JNI và reflection contract;
+- giữ nguyên toàn bộ string resource, bao gồm key, `R.string.*`, `@string/...`, giá trị và bản dịch;
 - kiểm tra build và diff trước khi hoàn tất.
+
+Sử dụng `android-semantic-renamer` khi bạn cần:
+
+- đặt lại class, function, variable, Room declaration và resource bằng tên mới có ý nghĩa tương đương;
+- áp dụng một semantic family nhất quán, ví dụ `Movie` thành `Film`, thay vì nối suffix;
+- giữ nguyên tuyệt đối code flow, data flow, runtime behavior, UI appearance và UI interaction;
+- giữ nguyên package/application identity, contract, persisted data và toàn bộ string resource;
+- bỏ qua mọi identifier không thể đổi tên an toàn thay vì chỉnh logic hoặc UI để bù.
 
 ## Cài đặt
 
@@ -82,6 +96,12 @@ Chỉ cài skill thêm suffix:
 npx skills add https://github.com/baothanhbin/BinGen-Skill --skill "android-suffix-renamer"
 ```
 
+Chỉ cài skill semantic rename:
+
+```powershell
+npx skills add https://github.com/baothanhbin/BinGen-Skill --skill "android-semantic-renamer"
+```
+
 Sau khi cài đặt, hãy khởi động lại Codex để danh sách skill được tải lại.
 
 ## Cài đặt thủ công
@@ -94,6 +114,7 @@ Các thư mục đích tương ứng:
 %USERPROFILE%\.codex\skills\skill-gen-app-compose-multi-module
 %USERPROFILE%\.codex\skills\skill-gen-app-compose-single-module
 %USERPROFILE%\.codex\skills\android-suffix-renamer
+%USERPROFILE%\.codex\skills\android-semantic-renamer
 ```
 
 Folder nguồn trong repository:
@@ -102,6 +123,7 @@ Folder nguồn trong repository:
 skills/skill-gen-app-compose-multi-module
 skills/skill-gen-app-compose-single-module
 skills/android-suffix-renamer
+skills/android-semantic-renamer
 ```
 
 ## Cách sử dụng
@@ -214,6 +236,9 @@ Hãy đổi tên đồng bộ các file Kotlin/Java, class, interface, function,
 variable, Room Entity/DAO/Database/Repository, layout, XML ID và Android
 resource thuộc project.
 
+Giữ nguyên toàn bộ string resource: không đổi key `<string>`/`<string-array>`,
+`R.string.*`, `@string/...`, nội dung, bản dịch hoặc tên file `strings*.xml`.
+
 Không thay đổi luồng xử lý, package, namespace, applicationId, Android hoặc
 library callback, Room table/column/schema, SQL contract, JSON key, API path,
 SharedPreferences/DataStore key, JNI, reflection và các contract bên ngoài.
@@ -236,6 +261,27 @@ R.id.btn_cancel              -> R.id.btn_cancel_binbao
 ActivityMainBinding          -> ActivityMainBinbaoBinding
 ```
 
+### Đặt lại tên theo ngữ nghĩa
+
+Lệnh gọi cơ bản:
+
+```text
+Sử dụng $android-semantic-renamer cho project D:\path\to\android-project. Hãy đặt lại các identifier thuộc project bằng tên tương đương theo ngữ cảnh, không thay đổi bất kỳ code flow hoặc UI nào.
+```
+
+Ví dụ semantic family:
+
+```text
+MovieRepository       -> FilmRepository
+MovieDao              -> FilmDao
+MovieDetailScreen     -> FilmDetailScreen
+movieItems            -> filmEntries
+displayMovie          -> showFilm
+screen_movie_detail   -> screen_film_detail
+```
+
+Skill chỉ được đổi declaration/file/resource name và reference bắt buộc. Nếu một rename có thể làm thay đổi logic, runtime, database, contract hoặc UI, identifier đó phải được giữ nguyên và báo cáo.
+
 ## Thành phần của mỗi skill
 
 Tùy theo chức năng, một folder skill có thể gồm:
@@ -252,9 +298,12 @@ Tùy theo chức năng, một folder skill có thể gồm:
 - Skill một module đơn giản hơn nhưng vẫn giữ ranh giới giữa feature và layer.
 - Hai skill Compose tạo file project thực tế, không chỉ sinh nội dung hướng dẫn.
 - Skill thêm suffix thực hiện semantic rename, kiểm tra build/diff và giữ nguyên các contract bên ngoài hoặc dữ liệu đã lưu.
+- Skill thêm suffix không rename string resource; ví dụ `R.string.title_home` luôn được giữ nguyên.
+- Skill semantic rename không nối suffix và không được thay đổi code flow, runtime behavior hoặc bất kỳ đặc điểm UI nào.
 
 ## Tài liệu skill
 
 - [Skill Compose đa module](skills/skill-gen-app-compose-multi-module/SKILL.md)
 - [Skill Compose một module](skills/skill-gen-app-compose-single-module/SKILL.md)
 - [Skill thêm suffix Android](skills/android-suffix-renamer/SKILL.md)
+- [Skill semantic rename Android](skills/android-semantic-renamer/SKILL.md)

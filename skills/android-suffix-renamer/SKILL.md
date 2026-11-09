@@ -1,6 +1,6 @@
 ---
 name: android-suffix-renamer
-description: Append a caller-provided suffix to project-owned names in an existing Android Kotlin/Java project, including source files, types, Room declarations, functions, variables, and Android XML resources, while preserving runtime behavior and external contracts. Use for broad suffix-only refactors; do not use for package/application ID changes or feature rewrites.
+description: Append a caller-provided suffix to project-owned names in an existing Android Kotlin/Java project, including source files, types, Room declarations, functions, variables, and non-string Android XML resources, while preserving runtime behavior and external contracts. Use for broad suffix-only refactors; do not use for string-resource, package/application ID, or feature changes.
 ---
 
 # Android Suffix Renamer
@@ -14,7 +14,9 @@ Obtain these before editing:
 - `project_root`: the exact Android project root.
 - `suffix`: the text to append. Never infer it from a previous run or from the project path.
 
-Use the default scope unless the user narrows it: project-owned Kotlin/Java source files and declarations, Room types and DAO/repository methods, Android resource files and entries, XML IDs, and all project references to those names. Package names, namespace, application ID, module names, and directory names are outside the default scope.
+Use the default scope unless the user narrows it: project-owned Kotlin/Java source files and declarations, Room types and DAO/repository methods, non-string Android resource files and entries, XML IDs, and all project references to those names. Package names, namespace, application ID, module names, directory names, and string resources are outside the default scope.
+
+Treat string resources as immutable. Do not rename `<string>` or `<string-array>` entry names, files whose basename starts with `strings` in any `values*` directory, `R.string.*` references, `@string/...` references, or their values/translations. If a string key contains a renamed identifier, leave the key and every reference to it unchanged. This rule applies even when the user asks to rename all resources; changing string resources requires a separate explicit request that overrides this boundary.
 
 Normalize the suffix into naming-style variants without changing its words:
 
@@ -44,7 +46,7 @@ Work in small dependency-aware batches and verify after each batch:
 
 1. Rename project-owned types and their matching Kotlin/Java file stems. Update imports, constructors, generics, manifests, DI registrations, reflection/keep rules when the reference is unquestionably to that project type, and test sources.
 2. Rename Room-owned Kotlin/Java declarations and methods while preserving database schema strings and migration behavior. Update DAO callers, repository interfaces/implementations, abstract database accessors, and generated-type usages in source. Never edit generated Room output.
-3. Rename Android resource entries and resource file basenames consistently across all qualifier directories. Update XML references, `R` references, Data Binding expressions, Navigation/Safe Args references, manifest references, tests, generated View Binding/Data Binding class names, and generated binding fields derived from renamed IDs. Handle custom `app:` attributes, direct style parents, and `<item>` declarations regardless of XML attribute order.
+3. Rename eligible non-string Android resource entries and resource file basenames consistently across all qualifier directories. Exclude string resources before building the resource mapping. Update eligible XML references, `R` references, Data Binding expressions, Navigation/Safe Args references, manifest references, tests, generated View Binding/Data Binding class names, and generated binding fields derived from renamed IDs. Handle custom `app:` attributes, direct style parents, and `<item>` declarations regardless of XML attribute order.
 4. Rename remaining project-owned functions, properties, fields, parameters, and local variables semantically. Rename each interface/abstract contract and every project-owned implementation/call site as one unit. Preserve overload resolution, named arguments, accessor behavior, and Java interop.
 5. Compile Kotlin and Java after each batch. Treat an unresolved suffixed member on an Android/library receiver as a collision signal: revert or skip only that declaration/reference unit, not every same-spelled identifier globally. Search all source sets and build logic for each old mapped name. Any remaining hit must be classified as an intentional contract/string occurrence or fixed. Do not alter comments and prose merely to make the search empty.
 
@@ -62,7 +64,7 @@ Run the same successful baseline commands after the refactor, then run the stron
 - Unit and instrumentation-test compilation; run local tests when practical.
 - Android lint or the project's configured static checks.
 - Room schema/export validation and migration tests if present.
-- A final search for old mapped identifiers and duplicate suffixes.
+- A final search for old mapped identifiers and duplicate suffixes, plus a comparison proving string-resource keys, `R.string.*`/`@string/...` references, and string values are unchanged.
 - Package declarations still match their source directories, imports use the original package paths, and namespace/application ID/module names are unchanged.
 - Every renamed layout/ID has matching generated binding class/field references; every renamed custom attr and style parent resolves.
 - `git diff --check`, repository status, and a focused diff review proving changes are renames/reference updates rather than logic edits.

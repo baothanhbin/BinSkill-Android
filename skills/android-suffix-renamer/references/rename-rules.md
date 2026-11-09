@@ -12,7 +12,8 @@ Apply suffixes to identifiers, not arbitrary text. The examples below use suffix
 | Property/field/local/parameter | Yes | `movieDao` -> `movieDaoBinbao` | Update destructuring, named arguments, backing-field/accessor use, lambdas, and tests semantically. Do not rename implicit `it`, `this`, or `super`. |
 | Constant | Yes | `MAX_COUNT` -> `MAX_COUNT_BINBAO` | Preserve upper-snake style. Enum entries may use this form when they are not serialized contracts. |
 | Layout/resource file | Yes | `activity_main.xml` -> `activity_main_binbao.xml` | Apply the same basename mapping to every qualifier copy. Update generated binding class usage, e.g. `ActivityMainBinding` -> `ActivityMainBinbaoBinding`. |
-| Resource entry | Yes | `title_home` -> `title_home_binbao` | Covers project-owned IDs, strings, colors, dimens, styles, attrs, arrays, plurals, menus, navigation graphs, drawables, mipmaps, anims, XML configs, raw/font names when safe. Preserve Android/library attribute names. |
+| Resource entry (non-string) | Yes | `primary_color` -> `primary_color_binbao` | Covers project-owned IDs, colors, dimens, styles, attrs, plurals, menus, navigation graphs, drawables, mipmaps, anims, XML configs, raw/font names, and non-string arrays when safe. Preserve Android/library attribute names. |
+| String resource key/reference/value | No | `title_home`, `R.string.title_home`, and `@string/title_home` stay unchanged | Includes `<string>` and `<string-array>` entries, translations, formatted strings, plurals' text values, and files whose basename starts with `strings` in any `values*` directory. |
 | Manifest component type | Rename code type and references | `MainActivity` -> `MainActivityBinbao` | Update manifest/class references and keep rules. Do not change intent action/category strings unless explicitly requested. |
 | Room code types | Yes | `AppDatabase` -> `AppDatabaseBinbao` | Entity/DAO/database/repository class names and project-owned accessors may be renamed. |
 | Test declarations/files | Yes | `MovieDaoTest` -> `MovieDaoTestBinbao` | Update fixtures and references; keep framework test annotation names unchanged. |
@@ -29,7 +30,7 @@ These spellings are behavioral contracts, not ordinary code identifiers:
 - SharedPreferences/DataStore keys and file names, Bundle/Intent extra keys, SavedState keys, WorkManager unique names/tags, notification channel IDs, deep links, intent actions/categories, permissions, authorities, URI paths, navigation route strings, and IPC/AIDL contract names.
 - JNI/native method names, `System.loadLibrary` values, C/C++ exported symbols, reflection strings, class names loaded by string, ServiceLoader registrations, ProGuard/R8 rule syntax, and externally consumed public API names unless all consumers are in scope and verified.
 - Assets and arbitrary raw data file names when accessed by string, generated code, build outputs, `.gradle`, IDE metadata, Git internals, vendored dependencies, binaries, keystores, and secrets.
-- User-visible string values, comments, documentation, licenses, URLs, and ordinary string contents solely because they contain an old identifier.
+- String-resource keys and references (`R.string.*` and `@string/...`), files whose basename starts with `strings` in any `values*` directory, user-visible string values, translations, comments, documentation, licenses, URLs, and ordinary string contents solely because they contain an old identifier.
 
 Explicit contract annotations are a boundary: for `@SerializedName("movie_id") val movieId`, `movieId` may become `movieIdBinbao`, while `"movie_id"` remains unchanged.
 
@@ -37,6 +38,7 @@ Explicit contract annotations are a boundary: for `@SerializedName("movie_id") v
 
 ### Android resources
 
+- Exclude string resources from the mapping entirely. Do not rename `<string>` or `<string-array>` names, `R.string.*` or `@string/...` references, string values/translations, or `strings*.xml` file basenames. A key such as `title_home` remains `title_home` even when related code declarations or other resource types receive the suffix.
 - Resource file basenames, IDs, attrs, and ordinary value-entry names must remain valid lower snake case. Structured names that legitimately use another grammar, especially style/theme names with dots or existing capitalization, keep that grammar and append the corresponding style-preserving suffix. Rename definitions and references as one atomic mapping per resource type.
 - Preserve directory names such as `layout`, `layout-land`, `values-night`, and `drawable-hdpi`; rename the resource basename inside them.
 - A basename repeated across qualifiers is one logical resource and must receive the identical new name everywhere.
@@ -70,7 +72,7 @@ Explicit contract annotations are a boundary: for `@SerializedName("movie_id") v
 ## Mapping and review invariants
 
 - Mapping is one-to-one and idempotent: no two old names produce the same target, and already suffixed names remain unchanged.
-- Source mappings are keyed by symbol identity; resource mappings are keyed by `(resource type, old name)`. A bare-token dictionary is insufficient for either source semantics or generated bindings.
+- Source mappings are keyed by symbol identity; eligible non-string resource mappings are keyed by `(resource type, old name)`. String resources must not appear in the rename mapping. A bare-token dictionary is insufficient for either source semantics or generated bindings.
 - Only declarations owned by the target project are rename candidates. Usages in all source sets are updated, but external declarations are not.
 - File extensions and resource qualifiers remain unchanged.
 - The refactor must not change literals that define wire, storage, database, reflection, platform, or user-visible behavior.

@@ -1,4 +1,4 @@
 interface:
   display_name: "Android Suffix Renamer"
   short_description: "Safely suffix Android project symbols"
-  default_prompt: "Use $android-suffix-renamer to append a caller-provided suffix to project-owned Android, Kotlin, Room, and XML resource names without changing behavior or external contracts."
+  default_prompt: "Use $android-suffix-renamer to append a caller-provided suffix to project-owned Android, Kotlin, Room, and non-string XML resource names without changing string resources, behavior, or external contracts."
