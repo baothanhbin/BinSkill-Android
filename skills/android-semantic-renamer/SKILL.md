@@ -36,7 +36,7 @@ If a candidate cannot be renamed while all invariants remain true, exclude it fr
 
 1. Resolve and display the absolute project root. Verify it contains Gradle settings and at least one Android module.
 2. Inspect repository status and preserve all pre-existing user changes. Never reset, clean, stash, or overwrite them. If planned edits overlap dirty files and cannot be separated safely, ask the user how to proceed.
-3. Discover the wrapper, modules, variants, source sets, and verification commands. Run a representative baseline assemble/compile and unit tests. Run lint/static checks separately when practical. If the baseline fails, record the exact failure and stop unless the user explicitly accepts that baseline.
+3. Discover the wrapper, modules, variants, source sets, and verification commands. Run a representative baseline assemble/compile and unit tests. Run lint/static checks separately when practical. If assemble, compilation, or tests fail, record the exact failure and stop unless the user explicitly accepts that baseline. A pre-existing lint/static-analysis failure does not block a rename-only refactor when assemble, compilation, and tests succeed: record the complete baseline issue identities and counts, then require the post-refactor run to introduce no new issue, no new affected location except mechanically renamed paths/symbols, and no increased count or severity.
 4. Snapshot immutable identities and UI/behavior inputs: packages, namespace/application ID, module/source-set names, contract literals, Room schema/export history, navigation wiring, manifest wiring, XML non-name attributes, Compose structure, resources, assets, and available screenshot/golden baselines.
 5. Build a complete old-to-new mapping before mutation. Key source mappings by declaration identity or fully qualified symbol and resource mappings by `(resource type, old name)`. Include the semantic family, rationale, defining file, references, collision analysis, and risk classification.
 
@@ -76,7 +76,7 @@ Run the successful baseline commands again, then perform the strongest relevant 
 
 - assemble/compile every affected module and relevant variant;
 - compile instrumentation tests and run local tests where practical;
-- run lint/static checks and Room schema/migration tests when present;
+- run lint/static checks and Room schema/migration tests when present; when lint/static analysis already failed at baseline, compare issue identities, severity, counts, and affected source locations to prove the refactor introduced no regression;
 - run existing screenshot, golden, Compose UI, XML layout, and navigation tests when available;
 - compare string resources, runtime literals, contracts, assets, manifest wiring, navigation wiring, Room schemas, dependencies, and immutable identities against the baseline;
 - inspect Kotlin/Java diffs to prove only declaration/reference tokens, imports, and matching file names changed;
@@ -95,6 +95,6 @@ Report:
 - skipped names and the invariant or ambiguity that blocked each rename;
 - verification commands and outcomes;
 - proof that code flow, runtime behavior, UI, contracts, persisted data, and string resources remain unchanged;
-- any pre-existing failures or user changes that limited verification.
+- any pre-existing failures or user changes that limited verification, including unchanged baseline lint/static-analysis failures.
 
 Do not claim full completion while an approved mapping is partially applied or any required verification fails.
