@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rule XML"
+  short_description: "Apply the Android XML project rules"
+  default_prompt: "Use $rule-xml to apply the Android XML and project code rules to this task. First find the authoritative rule sources, then implement and verify the change."

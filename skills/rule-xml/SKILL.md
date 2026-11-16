@@ -1,9 +1,9 @@
 ---
-name: code-standards-enforcer
+name: rule-xml
 description: Implement or review code against the target project's documented standards and enforced tooling. Use when a user asks to follow, enforce, or check project coding rules; do not use merely for general coding help with no project-specific rules.
 ---
 
-# Code Standards Enforcer
+# Rule XML
 
 Make every code change conform to the target project's authoritative rules. Treat the rules as constraints on the implementation, not as optional style suggestions.
 

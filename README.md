@@ -10,7 +10,7 @@ Repository hiện có năm skill Android:
 - `skill-gen-app-compose-single-module`: tạo project chỉ có một module `:app`, đồng thời phân tách `app`, `core/*` và `feature/*` bằng package folder.
 - `android-suffix-renamer`: thêm suffix do người dùng chỉ định vào tên Kotlin, Java, Room và Android resource không phải string thuộc project mà không làm thay đổi hành vi.
 - `android-semantic-renamer`: đặt lại identifier thuộc project bằng tên tương đương theo ngữ cảnh, không dùng suffix và không thay đổi code flow, runtime behavior hoặc UI.
-- `code-standards-enforcer`: bảo đảm code được viết hoặc review theo rule, cấu hình và công cụ kiểm tra của project đích.
+- `rule-xml`: bảo đảm code và Android XML được viết hoặc review theo rule, cấu hình và công cụ kiểm tra của project đích.
 
 ## Cấu trúc repository
 
@@ -35,7 +35,7 @@ skills/
     SKILL.md
     agents/
     references/
-  code-standards-enforcer/
+  rule-xml/
     SKILL.md
     agents/
     references/
@@ -75,7 +75,7 @@ Sử dụng `android-semantic-renamer` khi bạn cần:
 - giữ nguyên package/application identity, contract, persisted data và toàn bộ string resource;
 - bỏ qua mọi identifier không thể đổi tên an toàn thay vì chỉnh logic hoặc UI để bù.
 
-Sử dụng `code-standards-enforcer` khi bạn cần:
+Sử dụng `rule-xml` khi bạn cần:
 
 - buộc code mới tuân thủ coding rule của project;
 - kiểm tra các nguồn rule như `AGENTS.md`, `CONTRIBUTING.md`, lint, format và CI;
@@ -122,7 +122,7 @@ npx skills add https://github.com/baothanhbin/BinGen-Skill --skill "android-sema
 Chỉ cài skill kiểm soát coding standards:
 
 ```powershell
-npx skills add https://github.com/baothanhbin/BinGen-Skill --skill "code-standards-enforcer"
+npx skills add https://github.com/baothanhbin/BinGen-Skill --skill "rule-xml"
 ```
 
 Sau khi cài đặt, hãy khởi động lại Codex để danh sách skill được tải lại.
@@ -138,7 +138,7 @@ Các thư mục đích tương ứng:
 %USERPROFILE%\.codex\skills\skill-gen-app-compose-single-module
 %USERPROFILE%\.codex\skills\android-suffix-renamer
 %USERPROFILE%\.codex\skills\android-semantic-renamer
-%USERPROFILE%\.codex\skills\code-standards-enforcer
+%USERPROFILE%\.codex\skills\rule-xml
 ```
 
 Folder nguồn trong repository:
@@ -148,7 +148,7 @@ skills/skill-gen-app-compose-multi-module
 skills/skill-gen-app-compose-single-module
 skills/android-suffix-renamer
 skills/android-semantic-renamer
-skills/code-standards-enforcer
+skills/rule-xml
 ```
 
 ## Cách sử dụng
@@ -312,7 +312,7 @@ Skill chỉ được đổi declaration/file/resource name và reference bắt b
 Lệnh gọi cơ bản:
 
 ```text
-Sử dụng $code-standards-enforcer để thực hiện thay đổi này theo toàn bộ rule của project.
+Sử dụng $rule-xml để thực hiện thay đổi này theo toàn bộ rule của project.
 ```
 
 Skill sẽ tìm rule theo thứ tự: yêu cầu hiện tại, hướng dẫn trong repository như `AGENTS.md` hoặc `CONTRIBUTING.md`, cấu hình thực thi như formatter/linter/type check/CI, rồi đến convention ở code liền kề. Skill không được tắt hoặc bỏ qua tool kiểm tra chỉ để thay đổi được pass.
@@ -342,4 +342,4 @@ Tùy theo chức năng, một folder skill có thể gồm:
 - [Skill Compose một module](skills/skill-gen-app-compose-single-module/SKILL.md)
 - [Skill thêm suffix Android](skills/android-suffix-renamer/SKILL.md)
 - [Skill semantic rename Android](skills/android-semantic-renamer/SKILL.md)
-- [Skill Code Standards Enforcer](skills/code-standards-enforcer/SKILL.md)
+- [Skill Rule XML](skills/rule-xml/SKILL.md)
