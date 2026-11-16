@@ -4,12 +4,13 @@
 
 `BinGen-Skill` là bộ sưu tập Codex skill dành cho việc tạo mới và refactor project Android an toàn.
 
-Repository hiện có bốn skill Android:
+Repository hiện có năm skill Android:
 
 - `skill-gen-app-compose-multi-module`: tạo project Compose đa module gồm `app`, `core/*`, `feature/*`, `resources` và `build-logic`.
 - `skill-gen-app-compose-single-module`: tạo project chỉ có một module `:app`, đồng thời phân tách `app`, `core/*` và `feature/*` bằng package folder.
 - `android-suffix-renamer`: thêm suffix do người dùng chỉ định vào tên Kotlin, Java, Room và Android resource không phải string thuộc project mà không làm thay đổi hành vi.
 - `android-semantic-renamer`: đặt lại identifier thuộc project bằng tên tương đương theo ngữ cảnh, không dùng suffix và không thay đổi code flow, runtime behavior hoặc UI.
+- `code-standards-enforcer`: bảo đảm code được viết hoặc review theo rule, cấu hình và công cụ kiểm tra của project đích.
 
 ## Cấu trúc repository
 
@@ -31,6 +32,10 @@ skills/
     agents/
     references/
   android-semantic-renamer/
+    SKILL.md
+    agents/
+    references/
+  code-standards-enforcer/
     SKILL.md
     agents/
     references/
@@ -70,6 +75,18 @@ Sử dụng `android-semantic-renamer` khi bạn cần:
 - giữ nguyên package/application identity, contract, persisted data và toàn bộ string resource;
 - bỏ qua mọi identifier không thể đổi tên an toàn thay vì chỉnh logic hoặc UI để bù.
 
+Sử dụng `code-standards-enforcer` khi bạn cần:
+
+- buộc code mới tuân thủ coding rule của project;
+- kiểm tra các nguồn rule như `AGENTS.md`, `CONTRIBUTING.md`, lint, format và CI;
+- áp dụng baseline Hilt ViewModel cho Android project đã dùng Hilt, nhưng vẫn ưu tiên rule riêng của project;
+- bắt buộc user-visible text của Android dùng string resource thay vì hard-code;
+- dùng `CircularProgressIndicator` theo visual baseline của skill cho loading bất định trên XML/View;
+- dùng `AlwaysMarqueeTextView` với typography style trong `style.xml`/`styles.xml` cho text label mới, và thêm `android:paddingHorizontal="10dp"` khi label hoạt động như button;
+- dùng Search View baseline với `bg_search_field.xml` và `search_cursor.xml` cho search input XML/View;
+- ưu tiên `LinearLayout` cho layout Activity, chỉ dùng `ConstraintLayout` khi bố cục thực sự cần ràng buộc;
+- chạy các bước xác thực phù hợp trước khi bàn giao thay đổi.
+
 ## Cài đặt
 
 Cài tất cả skill trong repository:
@@ -102,6 +119,12 @@ Chỉ cài skill semantic rename:
 npx skills add https://github.com/baothanhbin/BinGen-Skill --skill "android-semantic-renamer"
 ```
 
+Chỉ cài skill kiểm soát coding standards:
+
+```powershell
+npx skills add https://github.com/baothanhbin/BinGen-Skill --skill "code-standards-enforcer"
+```
+
 Sau khi cài đặt, hãy khởi động lại Codex để danh sách skill được tải lại.
 
 ## Cài đặt thủ công
@@ -115,6 +138,7 @@ Các thư mục đích tương ứng:
 %USERPROFILE%\.codex\skills\skill-gen-app-compose-single-module
 %USERPROFILE%\.codex\skills\android-suffix-renamer
 %USERPROFILE%\.codex\skills\android-semantic-renamer
+%USERPROFILE%\.codex\skills\code-standards-enforcer
 ```
 
 Folder nguồn trong repository:
@@ -124,6 +148,7 @@ skills/skill-gen-app-compose-multi-module
 skills/skill-gen-app-compose-single-module
 skills/android-suffix-renamer
 skills/android-semantic-renamer
+skills/code-standards-enforcer
 ```
 
 ## Cách sử dụng
@@ -282,6 +307,16 @@ screen_movie_detail   -> screen_film_detail
 
 Skill chỉ được đổi declaration/file/resource name và reference bắt buộc. Nếu một rename có thể làm thay đổi logic, runtime, database, contract hoặc UI, identifier đó phải được giữ nguyên và báo cáo.
 
+### Tuân thủ coding standards
+
+Lệnh gọi cơ bản:
+
+```text
+Sử dụng $code-standards-enforcer để thực hiện thay đổi này theo toàn bộ rule của project.
+```
+
+Skill sẽ tìm rule theo thứ tự: yêu cầu hiện tại, hướng dẫn trong repository như `AGENTS.md` hoặc `CONTRIBUTING.md`, cấu hình thực thi như formatter/linter/type check/CI, rồi đến convention ở code liền kề. Skill không được tắt hoặc bỏ qua tool kiểm tra chỉ để thay đổi được pass.
+
 ## Thành phần của mỗi skill
 
 Tùy theo chức năng, một folder skill có thể gồm:
@@ -307,3 +342,4 @@ Tùy theo chức năng, một folder skill có thể gồm:
 - [Skill Compose một module](skills/skill-gen-app-compose-single-module/SKILL.md)
 - [Skill thêm suffix Android](skills/android-suffix-renamer/SKILL.md)
 - [Skill semantic rename Android](skills/android-semantic-renamer/SKILL.md)
+- [Skill Code Standards Enforcer](skills/code-standards-enforcer/SKILL.md)

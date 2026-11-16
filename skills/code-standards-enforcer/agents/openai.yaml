@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Standards Enforcer"
+  short_description: "Implement code to the project rules"
+  default_prompt: "Apply the project code standards to this task. First find the authoritative rule sources, then implement and verify the change."
